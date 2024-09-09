@@ -1,0 +1,29 @@
+#设置端口号
+server:
+  port:
+    socks5: 10808
+    http: 10809
+
+#代理模式有 pac|global|direct三种
+proxy:
+  mode: global
+
+socks5:
+  authentication:
+    #true或者false，是否启用认证的开关
+    enabel: true
+    #socks5认证信息文件，当authentication配置项为true时生效，表示授权用户文件路径，存储着用户名:密码键值对
+    path: ./users.properties
+
+trojan:
+  #trojan密码，用于trojan协议握手
+  password: 密码
+  server:
+    #trojan服务端域名
+    host: 服务器地址
+    #trojan服务端tls端口号
+    port: 443
+
+#pac文件路径，0：直连；-1：拒绝连接；1：代理连接
+pacfile:
+  path: ./pac.txt

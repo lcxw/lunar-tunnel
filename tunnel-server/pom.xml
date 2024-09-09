@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>tunnel-server</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <parent>
+        <artifactId>lunar-cloud-tunnel</artifactId>
+        <groupId>com.lunar.cloud</groupId>
+        <relativePath>../pom.xml</relativePath>
+        <version>1.2.1-SNAPSHOTS</version>
+    </parent>
+    <dependencies>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>tunnel-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.github.seancfoley/ipaddress -->
+            <dependency>
+                <groupId>com.github.seancfoley</groupId>
+                <artifactId>ipaddress</artifactId>
+                <version>5.5.1</version>
+            </dependency>
+
+            <!--        <dependency>-->
+            <!--            <groupId>org.springframework.boot</groupId>-->
+            <!--            <artifactId>spring-boot-starter-websocket</artifactId>-->
+            <!--        </dependency>-->
+            <!--        <dependency>-->
+            <!--            <groupId>com.mysql</groupId>-->
+            <!--            <artifactId>mysql-connector-j</artifactId>-->
+            <!--        </dependency>-->
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-configuration-processor</artifactId>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+            </dependency>
+            <!--        <dependency>-->
+            <!--            <groupId>com.mybatis-flex</groupId>-->
+            <!--            <artifactId>mybatis-flex-spring-boot-starter</artifactId>-->
+            <!--        </dependency>-->
+            <!--        <dependency>-->
+            <!--            <groupId>com.mybatis-flex</groupId>-->
+            <!--            <artifactId>mybatis-flex-processor</artifactId>-->
+            <!--            <scope>provided</scope>-->
+            <!--        </dependency>-->
+
+    </dependencies>
+</project>

@@ -1,0 +1,18 @@
+server:
+  proxy:
+    socksPort: 30808
+    mixed-socks-and-http: true
+    listen: 0.0.0.0
+    proxy-model: direct
+    authentication-enabled: false
+    username: test
+    password: test
+    upstream-server-config:
+      host: 127.0.0.1
+      port: 7890
+      username: test
+    pac-rule-list:
+      - host: 127.0.0.1
+        proxy-model: direct
+      - host: baidu.com
+        proxy-model: reject

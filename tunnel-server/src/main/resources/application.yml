@@ -1,0 +1,132 @@
+server:
+  port: 20008
+spring:
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
+  security:
+    oauth2:
+      client:
+        registration:
+          storage-client:
+            provider: lunar
+            client-id: 269f07e3-e557-486e-bb4d-d86a15ceb7b1
+            client-secret: storage-client
+            authorization-grant-type: authorization_code
+            #            redirect-uri: http://127.0.0.1:20008/login/oauth2/callback/{registrationId}
+            redirect-uri: http://127.0.0.1:20008/login/oauth2/callback/storage-client
+            scope: openid
+            client-name: storage-client-authorization-code
+            client-authentication-method: client_secret_post
+        provider:
+          lunar:
+            jwk-set-uri: http://oidcs.cated.local:20005/oauth2/jwks
+            authorization-uri: http://oidcs.cated.local:20005/oauth2/authorize
+            token-uri: http://oidcs.cated.local:20005/oauth2/token
+            user-info-uri: http://oidcs.cated.local:20005/userinfo
+      #            user-name-attribute: sub
+      resourceserver:
+        jwt:
+          # Jwt中claims的iss属性，也就是jwt的签发地址，即认证服务器的根路径
+          # 资源服务器会进一步的配置，通过该地址获取公钥以解析jwt
+          #          issuer-uri: http://192.168.120.33:8080
+          #          issuer-uri: http://oidcs.cated.local:30000/oidc-server/
+          issuer-uri: http://oidcs.cated.local:20005
+          jwk-set-uri: http:/oidcs.cated.local:20005/.well-known/oauth2/jwks
+  #          jwk-set-uri: http:/oidcs.cated.local:30000/oidc-server/.well-known/oauth2/jwks
+  #          jwk-set-uri: http:/oidcs.cated.local:30000/oidc-server/.well-known/openid-configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+  thymeleaf:
+    cache: true
+  # 配置文件上传大小限制
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
+      config:
+        file-extension: yaml
+        server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
+        import-check:
+          enabled: false
+  application:
+    name: oss-center
+  config:
+    import:
+      - optional:nacos:redis.yaml
+#      - optional:nacos:server.yaml
+      - nacos:server.yaml
+      - server.yaml
+      - optional:nacos:redisson.yaml
+  #      - nacos:redis.yaml
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/oidc-demo?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:994322Nick}
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      url: jdbc:mysql://127.0.0.1:3306/oidc-demo?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true
+      username: ${MYSQL_USER:root}
+      password: ${MYSQL_PASSWORD:994322Nick}
+      minimum-idle: 5
+      idle-timeout: 600000
+      maximum-pool-size: 10
+      auto-commit: true
+      pool-name: HikariCorePool
+      max-lifetime: 1800000
+      connection-timeout: 30000
+  rabbitmq:
+    host: ${RABBIT_MQ_HOST:127.0.0.1}
+    port: ${RABBIT_MQ_PORT:5672}
+    virtual-host:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+logging:
+  level:
+    root: info
+    server.proxy: trace
+    io:
+      netty:
+        handler:
+          logging: debug
+#    org.springframework.web: debug
+#    org.springframework.security: trace
+#    com.zaxxer.hikari: DEBUG
+minio:
+  #  endpoint: ${MINIO_HOST:host.docker.internal}
+  endpoint: ${MINIO_HOST:127.0.0.1}
+  port: ${MINIO_PORT:9000}
+  access-key: ${MINIO_USER:admin}
+  secret-key: ${MINIO_KEY:12345678}
+# SocketIO配置
+socketio:
+  # SocketIO端口
+  port: 20008
+  # 连接数大小
+  workCount: 100
+  # 允许客户请求
+  allowCustomRequests: true
+  # 协议升级超时时间(毫秒)，默认10秒，HTTP握手升级为ws协议超时时间
+  upgradeTimeout: 10000
+  # Ping消息超时时间(毫秒)，默认60秒，这个时间间隔内没有接收到心跳消息就会发送超时事件
+  pingTimeout: 60000
+  # Ping消息间隔(毫秒)，默认25秒。客户端向服务器发送一条心跳消息间隔
+  pingInterval: 25000
+  # 设置HTTP交互最大内容长度
+  maxHttpContentLength: 1048576
+  # 设置最大每帧处理数据的长度，防止他人利用大数据来攻击服务器
+  maxFramePayloadLength: 1048576
