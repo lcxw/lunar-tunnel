@@ -1,0 +1,37 @@
+server:
+  port: 20007
+spring:
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
+      config:
+        file-extension: yaml
+        server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
+        import-check:
+          enabled: false
+  application:
+    name: tunnel-client
+  config:
+    import:
+      - optional:nacos:redis.yaml
+#      - optional:nacos:server.yaml
+      - optional:nacos:client.yaml
+      - optional:nacos:redisson.yaml
+
+logging:
+  level:
+    root: info
+    server.proxy: trace
+    io:
+      netty:
+        handler:
+          logging: debug
