@@ -15,13 +15,17 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.socksx.v5.*;
 import io.netty.util.AttributeKey;
+import io.netty.util.CharsetUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -61,39 +65,31 @@ public class Socks5CommandRequestInboundHandler extends SimpleChannelInboundHand
                 EventLoopGroup group = new NioEventLoopGroup();
                 log.info("udp msg");
                 Bootstrap bootstrap = new Bootstrap();
-                bootstrap.group(group)
-                        .channel(NioDatagramChannel.class);
-//                        .option(ChannelOption.TCP_NODELAY, true)
-//                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-//                        .option(ChannelOption.SO_KEEPALIVE, true);
-
-                log.info("current proxy mode:{}", pacMode);
-                bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
-                            @Override
-                            protected void initChannel(NioDatagramChannel ch) throws Exception {
-                                ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
-                                    @Override
-                                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                                        DatagramPacket packet = (DatagramPacket) msg;
-                                        ByteBuf buf = packet.content();
-                                        byte[] bytes = new byte[buf.readableBytes()];
-                                        String message = new String(bytes);
-                                        String message2 = buf.toString();
-                                        log.info("received new UDP message:{},message2:{}", message,message2);
-                                        buf.readBytes(bytes);
-                                        ByteBuf byteBuf1 = new UnpooledByteBufAllocator(false).buffer();
-                                        byteBuf1.writeCharSequence("recv send :"+message2, StandardCharsets.UTF_8);
-                                        DatagramPacket distPacket = new DatagramPacket(byteBuf1, ((DatagramPacket) msg).sender());
-                                        ctx.writeAndFlush(distPacket);
-                                    }
-                                });
-                            }
-                        })
-                        .option(ChannelOption.SO_BROADCAST, true);
                 try {
-                    Channel outerchannel = bootstrap.bind(0).sync().channel();
-                    ByteBuf buf = Unpooled.copiedBuffer("Hello, UDP!".getBytes());
-                    outerchannel.writeAndFlush(new DatagramPacket(buf, new java.net.InetSocketAddress(msg.dstAddr(), msg.dstPort()))).addListener(ChannelFutureListener.CLOSE);
+                    bootstrap.group(group)
+                            .channel(NioDatagramChannel.class)
+                            .option(ChannelOption.SO_REUSEADDR, true)
+                            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000);
+
+                    log.info("current proxy mode:{}", pacMode);
+                    bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
+                                @Override
+                                protected void initChannel(NioDatagramChannel ch) throws Exception {
+                                    ch.pipeline().addLast(new DatagramChannelHandler());
+                                }
+                            })
+                            .option(ChannelOption.SO_BROADCAST, true);
+                    // 3. 绑定端口
+                    Channel serverChannel = bootstrap.bind(msg.dstPort()).sync().channel();
+                    // 4. 获取绑定的端口号
+                    int port = ((InetSocketAddress) serverChannel.localAddress()).getPort();
+                    log.error("UDP Server started on port: " + port);
+
+
+                    channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.DOMAIN, "127.0.0.1", msg.dstPort()));
+                    ctx.fireChannelActive();
+                    // 等待 Channel 关闭
+                    serverChannel.closeFuture().sync();
                 } catch (Exception e) {
                     log.error("udp msg error", e);
                 } finally {
@@ -241,4 +237,36 @@ public class Socks5CommandRequestInboundHandler extends SimpleChannelInboundHand
         });
     }
 
+    static class DatagramChannelHandler extends ChannelInboundHandlerAdapter {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            DatagramPacket packet = (DatagramPacket) msg;
+            ByteBuf content = packet.content();
+
+            // 读取数据
+            byte[] receivedData = new byte[content.readableBytes()];
+            content.readBytes(receivedData);
+            String receivedMessage = new String(receivedData, CharsetUtil.UTF_8);
+            log.info("Received message:[{}] from:{} at:{}", receivedMessage, packet.sender(), packet.recipient());
+
+            // 回复消息
+            byte[] response = ("Hello from server: " + receivedMessage).getBytes(CharsetUtil.UTF_8);
+            DatagramPacket responsePacket = new DatagramPacket(Unpooled.wrappedBuffer(response), packet.sender());
+            ctx.writeAndFlush(responsePacket);
+
+            // 释放资源
+            content.release();
+            // 往组播地址中发送数据报
+            ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer("hello world", CharsetUtil.UTF_8), packet.sender()));
+            // 关闭Channel
+            ctx.close().awaitUninterruptibly();
+
+        }
+
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            log.error("error ", cause);
+            ctx.flush();
+        }
+    }
 }
