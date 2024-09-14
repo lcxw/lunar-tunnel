@@ -17,6 +17,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.socksx.v5.*;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import lombok.RequiredArgsConstructor;
@@ -332,10 +333,21 @@ public class Socks5CommandRequestInboundHandler extends SimpleChannelInboundHand
                                 }
                             })
                             .option(ChannelOption.SO_BROADCAST, true);
+                    Channel serverChannel = null;
                     // 3. 使用随机端口发送数据到远程服务器并接收返回数据
-                    Channel serverChannel = bootstrap.bind(0).sync().channel();
+                    Attribute<Integer> attr = ctx.channel().attr(UDP_SESSION_CLIENT_PORT);
+                    int udpProxy2ServerPort;
+                    if (attr != null && attr.get() != null) {
+                        udpProxy2ServerPort = attr.get();
+                        serverChannel = bootstrap.bind(udpProxy2ServerPort).sync().channel();
+                    } else {
+                        udpProxy2ServerPort = 0;
+                        serverChannel = bootstrap.bind(udpProxy2ServerPort).sync().channel();
+
+                    }
                     // 4. 获取绑定的端口号
                     int clientSenderPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
+                    ctx.channel().attr(UDP_SESSION_CLIENT_PORT).set(clientSenderPort);
                     log.error("udp client started on clientSenderPort: " + clientSenderPort);
 
                     // 发送UDP数据
