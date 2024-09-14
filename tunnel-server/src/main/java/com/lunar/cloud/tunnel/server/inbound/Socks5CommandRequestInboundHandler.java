@@ -310,7 +310,7 @@ public class Socks5CommandRequestInboundHandler extends SimpleChannelInboundHand
 
 
 //                                            DatagramPacket rePacket2 = new DatagramPacket(buffer, new InetSocketAddress("127.0.0.1", clientPort));
-                                            DatagramPacket rePacket2 = new DatagramPacket(Unpooled.wrappedBuffer(buffer), new InetSocketAddress("127.0.0.1", port));
+                                            DatagramPacket rePacket2 = new DatagramPacket(Unpooled.wrappedBuffer(buffer), new InetSocketAddress(clientIp, port));
 
 
                                             byte[] result = new byte[buffer.readableBytes()];
