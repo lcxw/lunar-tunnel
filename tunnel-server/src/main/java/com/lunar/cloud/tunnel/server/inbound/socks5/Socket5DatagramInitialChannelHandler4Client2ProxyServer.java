@@ -44,7 +44,9 @@ public class Socket5DatagramInitialChannelHandler4Client2ProxyServer extends Cha
         byte[] receivedData = new byte[content.readableBytes()];
         content.readBytes(receivedData);
         String receivedMessage = new String(receivedData, CharsetUtil.UTF_8);
-        log.info("Received client sockst packaged message:[{}] from:{} at:{}", receivedMessage, packet.sender(), packet.recipient());
+        log.info("Received client sockst packaged message:[{}] from客户端地址:{} at代理服务器地址:{}", receivedMessage, packet.sender(), packet.recipient());
+        EventLoopGroup group = new NioEventLoopGroup();
+
         try {
             // 解析客户端请求转发的udp包请求头
             byte[] protolHeader = Arrays.copyOfRange(receivedData, 0, 4);
@@ -68,76 +70,68 @@ public class Socket5DatagramInitialChannelHandler4Client2ProxyServer extends Cha
             log.info("receive client proxy request, want's to send data:{} to target:[{}：{}]", clientDataString, proxyTargetIp, proxyTargetPort);
             // 使用代理服务器，既socks5 的udp服务器新建端口像真实服务器发送数据
             log.info("begin to transform client data:{} to actual remote at[{}:{}]", clientDataString, proxyTargetIp, proxyTargetPort);
-            try {
-                EventLoopGroup group = new NioEventLoopGroup();
-                Bootstrap bootstrap = new Bootstrap();
-                bootstrap.group(group)
-                        .channel(NioDatagramChannel.class)
-                        .option(ChannelOption.SO_REUSEADDR, true)
-                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000);
-                bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
-                            @Override
-                            protected void initChannel(NioDatagramChannel ch) throws Exception {
-                                ch.pipeline().addFirst(new LoggingHandler("udpProxyHandler"));
-                                ch.pipeline().addLast(new Socket5DatagramInitialChannelHandler4Proxy2ClientServer(port, proxyTargetIp, protolHeader, clientIpBytes, clientPortBytes, ctx));
-                            }
-                        })
-                        .option(ChannelOption.SO_BROADCAST, true);
-                Channel serverChannel = null;
-                // 3. 使用随机端口发送数据到远程服务器并接收返回数据
-                Attribute<Integer> attr = ctx.channel().attr(UDP_SESSION_CLIENT_PORT);
-                int udpProxy2ServerPort;
-                if (attr != null && attr.get() != null) {
-                    udpProxy2ServerPort = attr.get();
-                    serverChannel = bootstrap.bind(udpProxy2ServerPort).sync().channel();
-                } else {
-                    udpProxy2ServerPort = 0;
-                    serverChannel = bootstrap.bind(udpProxy2ServerPort).sync().channel();
-                }
-                // 4. 获取绑定的端口号
-                int clientSenderPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
-                ctx.channel().attr(UDP_SESSION_CLIENT_PORT).set(clientSenderPort);
-                log.error("udp client started on clientSenderPort: " + clientSenderPort);
 
-                // 发送UDP数据
-                log.info("发送udp数据到真实服务器");
-                DatagramPacket remotePacket = new DatagramPacket(Unpooled.wrappedBuffer(actualClientData), new InetSocketAddress(InetAddress.getByName(proxyTargetIp), proxyTargetPort));
-                serverChannel.writeAndFlush(remotePacket).sync();
-
-                // 等待返回数据
-//                    serverChannel.closeFuture().sync();
-//                    ctx.fireChannelActive();
-
-            } catch (Exception e) {
-                log.error("udp msg error", e);
-            } finally {
-                log.error("udp msg finish");
-            }
+            sendClientDataByProxyServer(ctx, proxyTargetIp, protolHeader, clientIpBytes, clientPortBytes, actualClientData, proxyTargetPort);
             // 回复消息
             log.info("收到真实服务器返回的消息");
-//                byte[] response = ("Hello from server: " + receivedMessage).getBytes(CharsetUtil.UTF_8);
-//                DatagramPacket responsePacket = new DatagramPacket(Unpooled.wrappedBuffer(response), packet.sender());
-//                ctx.writeAndFlush(responsePacket);
-//                ctx.fireChannelActive();
-
         } catch (Exception e) {
             log.error("error parse data", e);
         } finally {
             // 释放资源
             content.release();
-            // 往组播地址中发送数据报
-//                ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer("hello world", CharsetUtil.UTF_8), packet.sender()));
-            // 关闭Channel
-//                ctx.close().awaitUninterruptibly();
+            group.shutdownGracefully();
         }
+    }
 
+    private void sendClientDataByProxyServer(ChannelHandlerContext ctx, String proxyTargetIp, byte[] protolHeader, byte[] clientIpBytes, byte[] clientPortBytes, byte[] actualClientData, int proxyTargetPort) {
+        EventLoopGroup group2 = new NioEventLoopGroup();
+        try {
+            Bootstrap bootstrap = new Bootstrap();
+            bootstrap.group(group2)
+                    .channel(NioDatagramChannel.class)
+                    .option(ChannelOption.SO_REUSEADDR, true)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000);
+            bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
+                        @Override
+                        protected void initChannel(NioDatagramChannel ch) throws Exception {
+                            ch.pipeline().addFirst(new LoggingHandler("udpProxyHandler"));
+                            ch.pipeline().addLast(new Socket5DatagramInitialChannelHandler4Proxy2ClientServer(port, proxyTargetIp, protolHeader, clientIpBytes, clientPortBytes, ctx));
+                        }
+                    })
+                    .option(ChannelOption.SO_BROADCAST, true);
+            Channel serverChannel = null;
+            // 3. 使用随机端口发送数据到远程服务器并接收返回数据
+            Attribute<Integer> attr = ctx.channel().attr(UDP_SESSION_CLIENT_PORT);
+            int udpProxy2ServerPort;
+            if (attr != null && attr.get() != null) {
+                udpProxy2ServerPort = attr.get();
+                serverChannel = bootstrap.bind(udpProxy2ServerPort).sync().channel();
+            } else {
+                udpProxy2ServerPort = 0;
+                serverChannel = bootstrap.bind(udpProxy2ServerPort).sync().channel();
+            }
+            // 4. 获取绑定的端口号
+            int clientSenderPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
+            ctx.channel().attr(UDP_SESSION_CLIENT_PORT).set(clientSenderPort);
+            log.error("udp client started on clientSenderPort: " + clientSenderPort);
 
+            // 发送UDP数据
+            log.info("发送udp数据到真实服务器");
+            DatagramPacket remotePacket = new DatagramPacket(Unpooled.wrappedBuffer(actualClientData), new InetSocketAddress(InetAddress.getByName(proxyTargetIp), proxyTargetPort));
+            serverChannel.writeAndFlush(remotePacket).sync();
+
+        } catch (Exception e) {
+            log.error("udp msg error", e);
+        } finally {
+            log.error("udp msg finish");
+//                group2.shutdownGracefully();
+        }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        log.error("error ", cause);
-        ctx.flush();
+        log.error("udp代理服务器与客户端链接出现异常 ", cause);
+        ctx.close();
     }
 
 

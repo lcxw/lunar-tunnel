@@ -26,15 +26,20 @@ public class Socket5DatagramInitialChannelHandler4Proxy2ClientServer extends Cha
     private final ChannelHandlerContext clientChannelContext;
 
     @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("udp代理服务器与目标服务器接出现异常", cause);
+        ctx.close();
+    }
+
+    @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         DatagramPacket packet = (DatagramPacket) msg;
         ByteBuf content = packet.content();
-        // 读取数据
+        // 读取目标服务器响应数据
         byte[] receivedServerData = new byte[content.readableBytes()];
         content.readBytes(receivedServerData);
         String receivedMessage = new String(receivedServerData, CharsetUtil.UTF_8);
         log.info("Received message:[{}] from:{} at:{}", receivedMessage, packet.sender(), packet.recipient());
-        Channel remoteChannel = ctx.channel();
 
         ByteBuf buffer = Unpooled.buffer();
         buffer.writeBytes(protolHeader);
@@ -42,19 +47,9 @@ public class Socket5DatagramInitialChannelHandler4Proxy2ClientServer extends Cha
         buffer.writeBytes(clientPortBytes);
         buffer.writeBytes(receivedServerData);
 
-
         DatagramPacket rePacket2 = new DatagramPacket(Unpooled.wrappedBuffer(buffer), new InetSocketAddress(proxyTargetIp, clientPort));
         log.info("准备发送给客户端:[{}:{}]的数据:{}", proxyTargetIp, clientPort, receivedServerData);
-//                                            ctx.channel().writeAndFlush(rePacket).sync();
         clientChannelContext.channel().writeAndFlush(rePacket2).sync();
-//                                            ch.flush();
-//                                            ctx.fireChannelActive();
-//                                            content.release();
-        // 等待返回数据
-//                                            remoteChannel.closeFuture().sync();
-//                                            remoteCtx.close().awaitUninterruptibly();
-//                                            ctx.writeAndFlush(receivedServerData);
 
-//                                            group.shutdownGracefully();
     }
 }

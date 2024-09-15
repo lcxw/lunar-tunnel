@@ -231,5 +231,9 @@ public class Socks5CommandRequestInboundHandler extends SimpleChannelInboundHand
         });
     }
 
-
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("error socket disconnect", cause);
+        eventExecutors.shutdownGracefully();
+    }
 }
