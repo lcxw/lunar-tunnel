@@ -5,6 +5,7 @@ import com.lunar.cloud.tunnel.server.config.ConfigContext;
 import com.lunar.cloud.tunnel.server.encoder.TrojanRequestEncoder;
 import com.lunar.cloud.tunnel.server.enums.ProxyModel;
 import com.lunar.cloud.tunnel.core.util.SslUtil;
+import com.lunar.cloud.tunnel.server.inbound.socks5.Socket5DatagramInitialChannelHandler4Client2ProxyServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -36,8 +37,7 @@ import java.util.Arrays;
 @Slf4j
 @RequiredArgsConstructor
 public class Socks5CommandRequestInboundHandler extends SimpleChannelInboundHandler<DefaultSocks5CommandRequest> {
-    public static final AttributeKey<Integer> UDP_SESSION_CLIENT_PORT =
-            AttributeKey.valueOf("session");
+
     private final EventLoopGroup eventExecutors;
 
 
@@ -62,29 +62,25 @@ public class Socks5CommandRequestInboundHandler extends SimpleChannelInboundHand
                     bootstrap.group(group)
                             .channel(NioDatagramChannel.class)
                             .option(ChannelOption.SO_REUSEADDR, true)
-                            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000);
+                            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000)
+                            .localAddress(0)
+                    ;
 
                     bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
                                 @Override
                                 protected void initChannel(NioDatagramChannel ch) throws Exception {
                                     ch.pipeline().addFirst(new LoggingHandler("udpLoggingHandler"));
-                                    ch.pipeline().addLast(new Socket5DatagramInitialChannelHandler(msg.dstPort()));
+                                    ch.pipeline().addLast(new Socket5DatagramInitialChannelHandler4Client2ProxyServer(msg.dstPort()));
                                 }
                             })
                             .option(ChannelOption.SO_BROADCAST, true);
-                    if (channel.attr(UDP_SESSION_CLIENT_PORT).get() != null) {
-                        Integer session = channel.attr(UDP_SESSION_CLIENT_PORT).get();
-                        log.info("udp session: port{}", session);
-                    } else {
-                        log.info("save udp session port:{}", msg.dstPort());
-                        channel.attr(UDP_SESSION_CLIENT_PORT).set(msg.dstPort());
-                    }
+
                     // 3. 绑定端口
                     Channel serverChannel = bootstrap.bind(0).sync().channel();
                     // 4. 获取绑定的端口号
                     int port = ((InetSocketAddress) serverChannel.localAddress()).getPort();
                     log.error("UDP Server started on port: " + port);
-                    channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4, "127.0.0.1", port));
+                    channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv6, ((InetSocketAddress) serverChannel.localAddress()).getHostString(), port));
                     ctx.fireChannelActive();
                     // 等待 Channel 关闭
                     serverChannel.closeFuture().sync();
@@ -235,162 +231,5 @@ public class Socks5CommandRequestInboundHandler extends SimpleChannelInboundHand
         });
     }
 
-    @RequiredArgsConstructor
-    static class Socket5DatagramInitialChannelHandler extends ChannelInboundHandlerAdapter {
-        private final int port;
 
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            Integer udpSessionPort = ctx.channel().attr(UDP_SESSION_CLIENT_PORT).get();
-            if (udpSessionPort != null) {
-                log.info("udp udpSessionPort: port{}", udpSessionPort);
-            }
-            DatagramPacket packet = (DatagramPacket) msg;
-            ByteBuf content = packet.content();
-
-            // 读取数据
-            byte[] receivedData = new byte[content.readableBytes()];
-            content.readBytes(receivedData);
-            String receivedMessage = new String(receivedData, CharsetUtil.UTF_8);
-            log.info("Received client sockst packaged message:[{}] from:{} at:{}", receivedMessage, packet.sender(), packet.recipient());
-            try {
-                // 解析请求头
-                byte[] protolHeader = Arrays.copyOfRange(receivedData, 0, 4);
-                byte[] reversionByte = Arrays.copyOfRange(protolHeader, 0, 2);
-                int reversion = ByteBuffer.wrap(reversionByte).getShort() & 0xFFFF;
-                byte[] fragByte = Arrays.copyOfRange(protolHeader, 2, 3);
-                int frag = ByteBuffer.wrap(fragByte).get() & 0xFFFF;
-                byte[] addrTypeByte = Arrays.copyOfRange(protolHeader, 3, 4);
-                int addrType = ByteBuffer.wrap(addrTypeByte).get() & 0xFFFF;
-                log.info("socks 5 udp relay message received,reversion:{},frag:{},addrType:{}", reversion, frag, addrType);
-                byte[] clientIpBytes = Arrays.copyOfRange(receivedData, 4, 8);
-                byte[] clientPortBytes = Arrays.copyOfRange(receivedData, 8, 10);
-                InetAddress clientAddress = InetAddress.getByAddress(clientIpBytes);
-                String clientIp = clientAddress.getHostAddress();
-                int clientPort = ByteBuffer.wrap(clientPortBytes).getShort() & 0xFFFF;
-                byte[] actualClientData = Arrays.copyOfRange(receivedData, 10, receivedData.length);
-                // 客户端发送过来的数据，既客户端像真实服务器发送的数据信息
-                String clientDataString = new String(actualClientData);
-                log.info("receive client data:{} from[{}：{}]", clientDataString, clientIp, clientPort);
-                log.info("begin to transform client data:{} to actual remote at[{}:{}]", clientDataString, clientIp, clientPort);
-
-                // 使用代理服务器，既socks5 的udp服务器新建端口像真实服务器发送数据
-                log.info("begin to send udp msg to actual server");
-                try {
-                    EventLoopGroup group = new NioEventLoopGroup();
-                    Bootstrap bootstrap = new Bootstrap();
-                    bootstrap.group(group)
-                            .channel(NioDatagramChannel.class)
-                            .option(ChannelOption.SO_REUSEADDR, true)
-                            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000);
-                    bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
-                                @Override
-                                protected void initChannel(NioDatagramChannel ch) throws Exception {
-                                    ch.pipeline().addFirst(new LoggingHandler("udpProxyHandler"));
-                                    ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
-                                        @Override
-                                        public void channelRead(ChannelHandlerContext remoteCtx, Object msg) throws Exception {
-                                            DatagramPacket packet = (DatagramPacket) msg;
-                                            ByteBuf content = packet.content();
-                                            // 读取数据
-                                            byte[] receivedServerData = new byte[content.readableBytes()];
-                                            content.readBytes(receivedServerData);
-                                            String receivedMessage = new String(receivedServerData, CharsetUtil.UTF_8);
-                                            log.info("Received message:[{}] from:{} at:{}", receivedMessage, packet.sender(), packet.recipient());
-                                            Channel remoteChannel = remoteCtx.channel();
-
-                                            ByteBuf buffer = Unpooled.buffer();
-                                            buffer.writeBytes(protolHeader);
-                                            buffer.writeBytes(clientIpBytes);
-                                            buffer.writeBytes(clientPortBytes);
-                                            buffer.writeBytes(receivedServerData);
-
-//                                            DatagramPacket rePacket = new DatagramPacket(Unpooled.wrappedBuffer(receivedServerData), (InetSocketAddress) ctx.channel().localAddress());
-                                            DatagramPacket rePacket = new DatagramPacket(Unpooled.wrappedBuffer(receivedServerData), new InetSocketAddress("127.0.0.1", port));
-
-
-//                                            DatagramPacket rePacket2 = new DatagramPacket(buffer, new InetSocketAddress("127.0.0.1", clientPort));
-                                            DatagramPacket rePacket2 = new DatagramPacket(Unpooled.wrappedBuffer(buffer), new InetSocketAddress(clientIp, port));
-
-
-                                            byte[] result = new byte[buffer.readableBytes()];
-                                            buffer.readBytes(result);
-                                            log.info("准备发送给客户端的数据:{}", result);
-//                                            ctx.channel().writeAndFlush(rePacket).sync();
-                                            ctx.channel().writeAndFlush(rePacket2).sync();
-//                                            ch.flush();
-//                                            ctx.fireChannelActive();
-//                                            content.release();
-                                            // 等待返回数据
-//                                            remoteChannel.closeFuture().sync();
-//                                            remoteCtx.close().awaitUninterruptibly();
-//                                            ctx.writeAndFlush(receivedServerData);
-
-//                                            group.shutdownGracefully();
-                                        }
-                                    });
-                                }
-                            })
-                            .option(ChannelOption.SO_BROADCAST, true);
-                    Channel serverChannel = null;
-                    // 3. 使用随机端口发送数据到远程服务器并接收返回数据
-                    Attribute<Integer> attr = ctx.channel().attr(UDP_SESSION_CLIENT_PORT);
-                    int udpProxy2ServerPort;
-                    if (attr != null && attr.get() != null) {
-                        udpProxy2ServerPort = attr.get();
-                        serverChannel = bootstrap.bind(udpProxy2ServerPort).sync().channel();
-                    } else {
-                        udpProxy2ServerPort = 0;
-                        serverChannel = bootstrap.bind(udpProxy2ServerPort).sync().channel();
-
-                    }
-                    // 4. 获取绑定的端口号
-                    int clientSenderPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
-                    ctx.channel().attr(UDP_SESSION_CLIENT_PORT).set(clientSenderPort);
-                    log.error("udp client started on clientSenderPort: " + clientSenderPort);
-
-                    // 发送UDP数据
-                    log.info("发送udp数据到真实服务器");
-                    DatagramPacket remotePacket = new DatagramPacket(Unpooled.wrappedBuffer(actualClientData), new InetSocketAddress(InetAddress.getByName(clientIp), clientPort));
-                    serverChannel.writeAndFlush(remotePacket).sync();
-
-                    // 等待返回数据
-//                    serverChannel.closeFuture().sync();
-//                    ctx.fireChannelActive();
-
-                } catch (Exception e) {
-                    log.error("udp msg error", e);
-                } finally {
-                    log.error("udp msg finish");
-                }
-                // 回复消息
-                log.info("收到真实服务器返回的消息");
-//                byte[] response = ("Hello from server: " + receivedMessage).getBytes(CharsetUtil.UTF_8);
-//                DatagramPacket responsePacket = new DatagramPacket(Unpooled.wrappedBuffer(response), packet.sender());
-//                ctx.writeAndFlush(responsePacket);
-//                ctx.fireChannelActive();
-
-            } catch (Exception e) {
-                log.error("error parse data", e);
-            } finally {
-                // 释放资源
-                content.release();
-                // 往组播地址中发送数据报
-//                ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer("hello world", CharsetUtil.UTF_8), packet.sender()));
-                // 关闭Channel
-//                ctx.close().awaitUninterruptibly();
-            }
-
-
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            log.error("error ", cause);
-            ctx.flush();
-        }
-
-
-    }
 }
