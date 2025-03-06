@@ -57,8 +57,10 @@ spring:
   cloud:
     nacos:
       discovery:
+        enabled: false
         server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
       config:
+        enabled: false
         file-extension: yaml
         server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
         import-check:
@@ -69,7 +71,7 @@ spring:
     import:
       - optional:nacos:redis.yaml
 #      - optional:nacos:server.yaml
-      - nacos:server.yaml
+      - optional:nacos:server.yaml
       - server.yaml
       - optional:nacos:redisson.yaml
   #      - nacos:redis.yaml

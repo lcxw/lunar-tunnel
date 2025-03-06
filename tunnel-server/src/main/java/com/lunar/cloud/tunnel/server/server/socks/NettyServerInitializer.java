@@ -1,4 +1,4 @@
-package com.lunar.cloud.tunnel.server.server;
+package com.lunar.cloud.tunnel.server.server.socks;
 
 import com.lunar.cloud.tunnel.server.config.ConfigContext;
 import com.lunar.cloud.tunnel.server.inbound.MixinSelectHandler;

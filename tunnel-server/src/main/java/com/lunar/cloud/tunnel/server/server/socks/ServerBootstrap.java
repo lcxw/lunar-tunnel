@@ -1,4 +1,4 @@
-package com.lunar.cloud.tunnel.server.server;
+package com.lunar.cloud.tunnel.server.server.socks;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
