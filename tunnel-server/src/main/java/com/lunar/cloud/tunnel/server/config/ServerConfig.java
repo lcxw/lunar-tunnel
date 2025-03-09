@@ -1,5 +1,6 @@
 package com.lunar.cloud.tunnel.server.config;
 
+import com.lunar.cloud.tunnel.core.constant.PortMapping;
 import com.lunar.cloud.tunnel.server.enums.ProxyModel;
 import com.lunar.cloud.tunnel.server.enums.ProxyProtoType;
 import inet.ipaddr.HostName;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,7 +22,7 @@ import java.util.List;
  */
 @Configuration
 @Component
-@ComponentScan(basePackages = {"server.proxy"})
+@ComponentScan(basePackages = {"com.lunar.cloud.tunnel"})
 @EnableConfigurationProperties
 @ConfigurationProperties(prefix = "server.proxy")
 @Data
@@ -29,8 +31,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Slf4j
-public class ServerConfig implements InitializingBean
-{
+public class ServerConfig implements InitializingBean {
     private Boolean mixedSocksAndHttp = true;
     private Integer socksPort = 12345;
     private Integer httpPort = socksPort;
@@ -42,6 +43,8 @@ public class ServerConfig implements InitializingBean
     private ProxyProtoType localServerProto = ProxyProtoType.SOCKS5;
     private ProxyModel proxyModel = ProxyModel.PAC;
     private List<ProxyRuleModel> pacRuleList;
+    private List<PortMapping> reverseProxyList;
+    private Integer reverseProxyRegisterPort = 16001;
 
 
     @Override
@@ -53,10 +56,19 @@ public class ServerConfig implements InitializingBean
                 hostName.validate();
 //                IPAddressString addressString = new IPAddressString(host);
 //                addressString.validate();
-            }catch (Exception e){
-                log.error("error parsing IP address from config ",e);
+            } catch (Exception e) {
+                log.error("error parsing IP address from config ", e);
                 throw e;
             }
         }
+        if (reverseProxyList == null) {
+            reverseProxyList = new ArrayList<>();
+            reverseProxyList.add(new PortMapping(8000, "127.0.0.1", 80));
+            reverseProxyList.add(new PortMapping(8002, "127.0.0.1", 7777));
+        } else {
+            reverseProxyList.add(new PortMapping(8000, "127.0.0.1", 80));
+            reverseProxyList.add(new PortMapping(8002, "127.0.0.1", 7777));
+        }
     }
+
 }

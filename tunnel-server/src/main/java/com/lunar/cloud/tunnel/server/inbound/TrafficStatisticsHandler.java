@@ -1,6 +1,5 @@
-package com.lunar.cloud.tunnel.server.server.cloud;
+package com.lunar.cloud.tunnel.server.inbound;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.traffic.ChannelTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
 import lombok.extern.slf4j.Slf4j;

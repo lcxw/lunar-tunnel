@@ -103,7 +103,7 @@ public class ClientSocket {
                         // 添加自定义协议编码器
                         pipeline.addLast(new TunnelMsgEncoder());
                         // 配置读写空闲检测（40秒读超时/8秒写间隔）
-                        pipeline.addLast(new IdleStateHandler(40, 8, 0));
+                        pipeline.addLast(new IdleStateHandler(40, 600, 0));
                         // 添加代理业务处理器
                         pipeline.addLast(new ProxyHandler(tunnelClientConfig));
                     }

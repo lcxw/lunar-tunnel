@@ -23,7 +23,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<TunnelMsg> {
     @Override
     public void channelRead0(ChannelHandlerContext ctx, TunnelMsg TunnelMsg) {
         // 代理服务器读到客户端数据了
-        log.info("代理服务器读到客户端数据了:{}",TunnelMsg);
+        log.trace("代理服务器读到客户端数据了:{}",TunnelMsg);
         byte type = TunnelMsg.getType();
         switch (type) {
             case TYPE_HEARTBEAT:

@@ -1,39 +1,32 @@
 package com.lunar.cloud.tunnel.core.constant;
 
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.internal.StringUtil;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class Constant {
+    // todo 这里只有一个客户端与代理服务器的连接，需要修改调整为支持多个客户端链接，大概是一个map，需要根据客户端注册到服务端的参数，区分不同的客户端链接，修改协议以支持注册时候提供客户端参数等，后期考虑客户端密码
     /** 客户端服务channel */
     public static Channel clientChannel = null;
 
     /** 绑定channel_id */
     public static final AttributeKey<String> VID = AttributeKey.newInstance("vid");
 
-    /** 访客，客户服务channel */
+    /**
+     * 访客，客户服务channel，存储内网客户端到代理服务器的连接
+     * */
     public static Map<String, Channel> vcc = new ConcurrentHashMap<>();
 
-    /** 访客，访客服务channel */
+    /**
+     * 访客，访客服务channel ，存储访客服务到代理服务器的连接
+     * */
     public static Map<String, Channel> vvc = new ConcurrentHashMap<>();
 
-    /** 访客，访客服务channel */
-    public static final Map<Integer, Channel> externalPortToClientMap = new ConcurrentHashMap<>();
-    public static final List<PortMapping> TunnelConfig = new CopyOnWriteArrayList<>();
-    /** 服务代理端口 */
-    public static int visitorPort = 16002;
 
-    /** 服务端口 */
-    public static int serverPort = 16001;
 
     /**
      * 清除连接

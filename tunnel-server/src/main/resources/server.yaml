@@ -16,3 +16,7 @@ server:
         proxy-model: direct
       - host: baidu.com
         proxy-model: reject
+    reverse-proxy-list:
+      - internal-host: 127.0.0.3
+        internal-port: 28082
+        external-port: 29922

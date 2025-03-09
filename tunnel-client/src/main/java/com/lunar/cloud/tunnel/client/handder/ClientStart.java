@@ -67,7 +67,7 @@ public class ClientStart {
 
                         pipeline.addLast(new TunnelMsgDecoder(Integer.MAX_VALUE, 0, 4, -4, 0));
                         pipeline.addLast(new TunnelMsgEncoder());
-                        pipeline.addLast(new IdleStateHandler(40, 8, 0));
+                        pipeline.addLast(new IdleStateHandler(40, 600, 0));
                         pipeline.addLast(new ProxyHandler(tunnelClientConfig));
                     }
                 });
