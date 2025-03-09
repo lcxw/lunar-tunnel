@@ -2,6 +2,7 @@ package com.lunar.cloud.tunnel.client.handder;
 
 
 import com.lunar.cloud.tunnel.client.constant.Constant;
+import com.lunar.cloud.tunnel.client.constant.TunnelClientConfig;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsg;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -9,22 +10,38 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.AttributeKey;
 import io.netty.util.internal.StringUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import static com.lunar.cloud.tunnel.core.protocol.TunnelMsg.*;
 
+@Component
+@Slf4j
+@RequiredArgsConstructor
 public class ProxyHandler extends SimpleChannelInboundHandler<TunnelMsg> {
+private final TunnelClientConfig tunnelClientConfig;
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, TunnelMsg TunnelMsg) {
         // 客户端读取到代理过来的数据了
+        log.info("客户端读取到代理过来的数据了:{}", TunnelMsg);
         byte type = TunnelMsg.getType();
         String vid = new String(TunnelMsg.getData());
         switch (type) {
             case TYPE_HEARTBEAT:
+                log.info("收到服务端心跳包，忽略");
+//                TunnelMsg returnMsg = new TunnelMsg();
+//                returnMsg.setType(TYPE_HEARTBEAT);
+//                ctx.channel().writeAndFlush(returnMsg);
                 break;
             case TYPE_CONNECT:
-                RealSocket.connectRealServer(vid);
+
+                    RealSocket.connectRealServer(vid,tunnelClientConfig);
+
                 break;
             case TYPE_DISCONNECT:
                 Constant.clearvpcvrcAndClose(vid);
@@ -79,6 +96,9 @@ public class ProxyHandler extends SimpleChannelInboundHandler<TunnelMsg> {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
         cause.printStackTrace();
+        log.error("连接异常即将关闭: {}", cause.getMessage());
+        ctx.channel().attr(AttributeKey.valueOf("CLOSE_REASON")).set(cause);
+        ctx.close();
     }
 
     @Override

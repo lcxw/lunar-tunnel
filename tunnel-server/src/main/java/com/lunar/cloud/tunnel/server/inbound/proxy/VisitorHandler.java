@@ -12,14 +12,19 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.internal.StringUtil;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class VisitorHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+
         // 访客连接上代理服务器了
         Channel visitorChannel = ctx.channel();
         // 先不读取访客数据
+        log.info("有访客连接接入:{}", visitorChannel.remoteAddress());
+
         visitorChannel.config().setOption(ChannelOption.AUTO_READ, false);
 
         // 生成访客ID
@@ -32,8 +37,13 @@ public class VisitorHandler extends SimpleChannelInboundHandler<ByteBuf> {
         TunnelMsg TunnelMsg = new TunnelMsg();
         TunnelMsg.setType(TunnelMsg.TYPE_CONNECT);
         TunnelMsg.setData(vid.getBytes());
-        Constant.clientChannel.writeAndFlush(TunnelMsg);
-
+        log.info("像客户端发送连接握手信息");
+        if(Constant.clientChannel == null || !Constant.clientChannel.isActive()) {
+            log.info("客户端未连接");
+            return;
+        }else{
+            Constant.clientChannel.writeAndFlush(TunnelMsg);
+        }
         super.channelActive(ctx);
     }
 
@@ -49,6 +59,7 @@ public class VisitorHandler extends SimpleChannelInboundHandler<ByteBuf> {
         TunnelMsg.setType(TunnelMsg.TYPE_TRANSFER);
         TunnelMsg.setData(bytes);
 
+        log.info("代理服务器发送数据到客户端了");
         // 代理服务器发送数据到客户端了
         Channel clientChannel = Constant.vcc.get(vid);
         clientChannel.writeAndFlush(TunnelMsg);
@@ -65,10 +76,10 @@ public class VisitorHandler extends SimpleChannelInboundHandler<ByteBuf> {
         if (clientChannel != null && clientChannel.isActive()) {
 
             clientChannel.config().setOption(ChannelOption.AUTO_READ, true);
-
+            log.info("访客已断开链接");
             // 通知客户端，访客连接已经断开
             TunnelMsg TunnelMsg = new TunnelMsg();
-            TunnelMsg.setType(TunnelMsg.TYPE_DISCONNECT);
+            TunnelMsg.setType(com.lunar.cloud.tunnel.core.protocol.TunnelMsg.TYPE_DISCONNECT);
             TunnelMsg.setData(vid.getBytes());
             clientChannel.writeAndFlush(TunnelMsg);
         }
@@ -95,6 +106,7 @@ public class VisitorHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("访客连接异常", cause);
         ctx.close();
     }
 }

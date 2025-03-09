@@ -14,7 +14,7 @@ public class TunnelClientConfig {
     /**
      * 真实服务端口
      */
-    private Integer realPort = 8080;
+    private Integer realPort = 28088;
 
     /**
      * 服务端口
@@ -29,5 +29,5 @@ public class TunnelClientConfig {
     /**
      * 服务IP
      */
-    private String realServerIp = "127.0.0.1";
+    private String realServerIp = "127.0.0.2";
 }

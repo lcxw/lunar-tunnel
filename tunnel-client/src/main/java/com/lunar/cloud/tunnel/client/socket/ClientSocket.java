@@ -3,7 +3,6 @@ package com.lunar.cloud.tunnel.client.socket;
 import com.lunar.cloud.tunnel.client.constant.TunnelClientConfig;
 import com.lunar.cloud.tunnel.client.constant.TunnelClientConstant;
 import com.lunar.cloud.tunnel.client.handder.ProxyHandler;
-import com.lunar.cloud.tunnel.client.handder.RealHandler;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsg;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsgDecoder;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsgEncoder;
@@ -106,7 +105,7 @@ public class ClientSocket {
                         // 配置读写空闲检测（40秒读超时/8秒写间隔）
                         pipeline.addLast(new IdleStateHandler(40, 8, 0));
                         // 添加代理业务处理器
-                        pipeline.addLast(new ProxyHandler());
+                        pipeline.addLast(new ProxyHandler(tunnelClientConfig));
                     }
                 });
 

@@ -61,9 +61,9 @@ public class CloudServerHandler extends SimpleChannelInboundHandler<String> {
         Attribute<Integer> externalServerPortAttr = ctx.channel().attr(AttributeKey.valueOf("externalServerPort"));
         Integer port = externalServerPortAttr.get();
         log.info("客户端断开链接:{}", port);
-        Constant.externalPortToClientMap.remove(port);
-
-
+        if(port!=null){
+            Constant.externalPortToClientMap.remove(port);
+        }
         super.channelInactive(ctx);
     }
 

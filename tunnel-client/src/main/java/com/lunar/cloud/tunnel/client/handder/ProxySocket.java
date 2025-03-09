@@ -6,8 +6,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 
-
 import com.lunar.cloud.tunnel.client.constant.Constant;
+import com.lunar.cloud.tunnel.client.constant.TunnelClientConfig;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsg;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsgDecoder;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsgEncoder;
@@ -24,43 +24,31 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.internal.StringUtil;
+import lombok.RequiredArgsConstructor;
+import org.dromara.hutool.extra.spring.SpringUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
+@RequiredArgsConstructor
 public class ProxySocket {
     private static EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
 
-    /** 重连代理服务 */
-    private static final ScheduledExecutorService reconnectExecutor = Executors.newSingleThreadScheduledExecutor();
-
-    public static Channel connectProxyServer() throws Exception {
-        reconnectExecutor.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                try {
-                    connectProxyServer(null);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }, 3, 3, TimeUnit.SECONDS);
-        return connectProxyServer(null);
-    }
-
-    public static Channel connectProxyServer(String vid) throws Exception {
+    public static void connectProxyServer(String vid, TunnelClientConfig clientConfig) {
         if (StringUtil.isNullOrEmpty(vid)) {
             if (Constant.proxyChannel == null || !Constant.proxyChannel.isActive()) {
-                newConnect(null);
+                newConnect(null, clientConfig);
             }
-            return null;
         } else {
             Channel channel = Constant.vpc.get(vid);
             if (null == channel) {
-                newConnect(vid);
+                newConnect(vid, clientConfig);
                 channel = Constant.vpc.get(vid);
             }
-            return channel;
         }
     }
 
-    private static void newConnect(String vid) throws InterruptedException {
+    private static void newConnect(String vid, TunnelClientConfig clientConfig) {
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(eventLoopGroup).channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {
@@ -70,13 +58,13 @@ public class ProxySocket {
                         pipeline.addLast(new TunnelMsgDecoder(Integer.MAX_VALUE, 0, 4, -4, 0));
                         pipeline.addLast(new TunnelMsgEncoder());
                         pipeline.addLast(new IdleStateHandler(40, 8, 0));
-                        pipeline.addLast(new ProxyHandler());
+                        pipeline.addLast(new ProxyHandler(SpringUtil.getBean(TunnelClientConfig.class)));
                     }
                 });
 
-        bootstrap.connect(Constant.serverIp, Constant.serverPort).addListener(new ChannelFutureListener() {
+        bootstrap.connect(clientConfig.getServerIp(), clientConfig.getServerPort()).addListener(new ChannelFutureListener() {
             @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
+            public void operationComplete(ChannelFuture future) {
                 if (future.isSuccess()) {
                     // 客户端链接代理服务器成功
                     Channel channel = future.channel();

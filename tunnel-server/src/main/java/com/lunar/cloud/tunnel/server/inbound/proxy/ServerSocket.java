@@ -15,7 +15,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ServerSocket {
     private static EventLoopGroup bossGroup = new NioEventLoopGroup();
     private static EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -28,6 +30,7 @@ public class ServerSocket {
     public static void startServer() throws Exception {
         try {
 
+            log.info("服务端启动");
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
@@ -41,10 +44,12 @@ public class ServerSocket {
                         }
 
                     });
+            log.info("服务端开始成功");
             channelFuture = b.bind(Constant.serverPort).sync();
 
             channelFuture.addListener((ChannelFutureListener) channelFuture -> {
                 // 服务器已启动
+                log.info("服务端已启动");
             });
             channelFuture.channel().closeFuture().sync();
         } finally {

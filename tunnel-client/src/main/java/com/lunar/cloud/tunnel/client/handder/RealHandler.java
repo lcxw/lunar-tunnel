@@ -10,12 +10,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.internal.StringUtil;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class RealHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf buf) {
         // 客户读取到真实服务数据了
+        log.info("客户端读取到真实服务数据了:{}", buf);
         byte[] bytes = new byte[buf.readableBytes()];
         buf.readBytes(bytes);
         TunnelMsg TunnelMsg = new TunnelMsg();

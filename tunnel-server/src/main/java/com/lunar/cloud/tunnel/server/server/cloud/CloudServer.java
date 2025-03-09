@@ -6,6 +6,8 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import io.netty.channel.ChannelFuture;
@@ -23,7 +25,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class CloudServer {
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     @Async
     public void initCloudServer() throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);

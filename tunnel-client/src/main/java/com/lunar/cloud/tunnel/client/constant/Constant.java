@@ -15,20 +15,16 @@ public class Constant {
     /** 绑定访客id */
     public static final AttributeKey<String> VID = AttributeKey.newInstance("vid");
 
-    /** 访客，代理服务channel */
+    /**
+     *  访客，代理服务channel，存储客户端到代理服务器(公网)之间的链接
+     *  */
     public static Map<String, Channel> vpc = new ConcurrentHashMap<>();
 
-    /** 访客，真实服务channel */
+    /**
+     *  访客，真实服务channel ，存储代理客户端到真实的内网服务之间的链接
+     *  */
     public static Map<String, Channel> vrc = new ConcurrentHashMap<>();
 
-    /** 真实服务端口 */
-    public static int realPort = 8080;
-
-    /** 服务端口 */
-    public static int serverPort = 16001;
-
-    /** 服务IP */
-    public static String serverIp = "127.0.0.1";
 
     /**
      * 清除连接
