@@ -117,7 +117,7 @@ public class ClientSocket {
                 if (StringUtil.isNullOrEmpty(vid)) {
                     // 构建客户端注册消息（类型+客户端标识）
                     TunnelMsg msg = new TunnelMsg();
-                    msg.setType(TunnelMsg.TYPE_CONNECT);
+                    msg.setType(MessageType.TYPE_CONNECT);
                     msg.setData("client".getBytes());
                     channel.writeAndFlush(msg);
 
@@ -128,7 +128,7 @@ public class ClientSocket {
                 else {
                     // 构建虚拟连接注册消息（类型+VID标识）
                     TunnelMsg msg = new TunnelMsg();
-                    msg.setType(TunnelMsg.TYPE_CONNECT);
+                    msg.setType(MessageType.TYPE_CONNECT);
                     msg.setData(vid.getBytes());
                     channel.writeAndFlush(msg);
 

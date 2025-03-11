@@ -3,7 +3,7 @@ package com.lunar.cloud.tunnel.client.handder;
 
 import com.lunar.cloud.tunnel.client.constant.Constant;
 import com.lunar.cloud.tunnel.client.constant.TunnelClientConfig;
-import com.lunar.cloud.tunnel.core.protocol.TunnelMsg;
+import com.lunar.cloud.tunnel.core.protocol.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -14,10 +14,9 @@ import io.netty.util.AttributeKey;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static com.lunar.cloud.tunnel.core.protocol.TunnelMsg.*;
+import java.util.UUID;
 
 @Component
 @Slf4j
@@ -29,8 +28,16 @@ public class ProxyHandler extends SimpleChannelInboundHandler<TunnelMsg> {
     public void channelRead0(ChannelHandlerContext ctx, TunnelMsg tunnelMsg) {
         // 客户端读取到代理过来的数据了
         log.info("客户端读取到代理过来的数据了:{}", tunnelMsg);
-        byte type = tunnelMsg.getType();
-        String vid = new String(tunnelMsg.getData());
+        MessageType type = tunnelMsg.getType();
+        String vid;
+        if(type==MessageType.TYPE_CONNECT){
+            MessageBody data = tunnelMsg.getData();
+            TunnelMsg tunnelMsg = (TunnelMsg) data;
+            vid = new String(tunnelDataMsg.getData());
+        }else{
+            vid = UUID.randomUUID().toString();
+            log.error("生成vid：{}",vid);
+        }
         switch (type) {
             case TYPE_HEARTBEAT:
                 log.info("收到服务端心跳包，忽略");
@@ -47,8 +54,16 @@ public class ProxyHandler extends SimpleChannelInboundHandler<TunnelMsg> {
             case TYPE_TRANSFER:
                 // 把数据转到真实服务
                 log.info("收到服务端转发数据请求，vid:{},开始转发数据", vid);
-                ByteBuf buf = ctx.alloc().buffer(tunnelMsg.getData().length);
-                buf.writeBytes(tunnelMsg.getData());
+                ByteBuf buf = null;
+                MessageBody data = tunnelMsg.getData();
+                if(data instanceof TunnelAuthMsg authMsg){
+                    buf = ctx.alloc().buffer(authMsg.encode().length);
+                    buf.writeBytes(authMsg.encode());
+                }else if(data instanceof TunnelDataMsg dataMsg){
+                    buf = ctx.alloc().buffer(dataMsg.getData().length);
+                    buf.writeBytes(dataMsg.getData());
+                }
+
 
                 String visitorId = ctx.channel().attr(Constant.VID).get();
                 Channel rchannel = Constant.vrc.get(visitorId);
@@ -134,7 +149,7 @@ public class ProxyHandler extends SimpleChannelInboundHandler<TunnelMsg> {
                     // 写超时，发送心跳包
                     log.info("写超时即将发送心跳包:{}", ctx.channel().remoteAddress());
                     TunnelMsg tunnelmsg = new TunnelMsg();
-                    tunnelmsg.setType(TunnelMsg.TYPE_HEARTBEAT);
+                    tunnelmsg.setType(MessageType.TYPE_HEARTBEAT);
                     ctx.channel().writeAndFlush(tunnelmsg);
                     break;
                 case ALL_IDLE:

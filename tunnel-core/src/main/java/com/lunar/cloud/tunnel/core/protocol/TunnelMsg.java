@@ -1,28 +1,55 @@
 package com.lunar.cloud.tunnel.core.protocol;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
+import java.nio.ByteBuffer;
+
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class TunnelMsg {
+@AllArgsConstructor
+@NoArgsConstructor
+public class TunnelMsg extends MessageBody {
 
-    /** 心跳 */
-    public static final byte TYPE_HEARTBEAT = 0X00;
-
-    /** 连接成功 */
-    public static final byte TYPE_CONNECT = 0X01;
-
-    /** 数据传输 */
-    public static final byte TYPE_TRANSFER = 0X02;
-
-    /** 连接断开 */
-    public static final byte TYPE_DISCONNECT = 0X09;
-
-    /** 数据类型 */
-    private byte type;
-
-    /** 消息传输数据 */
+    private MessageHeader header;
     private byte[] data;
 
+    @Override
+    public MessageHeader getMessageHeader() {
+        return header;
+    }
 
+    @Override
+    public byte[] getBody() {
+        return data;
+    }
+
+    @Override
+
+    public byte[] encode() {
+        ByteBuffer buffer = ByteBuffer.allocate(MessageHeader.HEADER_LENGTH + data.length);
+        buffer.putInt(header.getLength());
+        buffer.put(header.encode());
+        buffer.put(data);
+        return buffer.array();
+    }
+
+    // 解码认证请求消息体
+    @Override
+
+    public TunnelMsg decode(byte[] data) {
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        // 先解码header，然后解码body
+
+        byte[] headerBytes = new byte[MessageHeader.HEADER_LENGTH];
+        buffer.get(headerBytes);
+        MessageHeader tempHeader = new MessageHeader();
+        tempHeader = tempHeader.decode(headerBytes);
+        byte[] bodyBytes = new byte[tempHeader.getLength() - MessageHeader.HEADER_LENGTH];
+        buffer.get(bodyBytes);
+        return new TunnelMsg(tempHeader, bodyBytes);
+    }
 }

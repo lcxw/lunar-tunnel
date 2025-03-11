@@ -35,7 +35,7 @@ public class VisitorHandler extends SimpleChannelInboundHandler<ByteBuf> {
         Constant.vvc.put(vid, visitorChannel);
 
         TunnelMsg tunnelMsg = new TunnelMsg();
-        tunnelMsg.setType(TunnelMsg.TYPE_CONNECT);
+        tunnelMsg.setType(MessageType.TYPE_CONNECT);
         tunnelMsg.setData(vid.getBytes());
         log.info("像客户端发送连接握手信息");
         if(Constant.clientChannel == null || !Constant.clientChannel.isActive()) {

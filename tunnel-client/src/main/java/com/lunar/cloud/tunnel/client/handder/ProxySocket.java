@@ -71,7 +71,7 @@ public class ProxySocket {
                     if (StringUtil.isNullOrEmpty(vid)) {
                         // 告诉服务端这条连接是client的连接
                         TunnelMsg TunnelMsg = new TunnelMsg();
-                        TunnelMsg.setType(TunnelMsg.TYPE_CONNECT);
+                        TunnelMsg.setType(MessageType.TYPE_CONNECT);
                         TunnelMsg.setData("client".getBytes());
                         channel.writeAndFlush(TunnelMsg);
 
@@ -80,7 +80,7 @@ public class ProxySocket {
 
                         // 告诉服务端这条连接是vid的连接
                         TunnelMsg TunnelMsg = new TunnelMsg();
-                        TunnelMsg.setType(TunnelMsg.TYPE_CONNECT);
+                        TunnelMsg.setType(MessageType.TYPE_CONNECT);
                         TunnelMsg.setData(vid.getBytes());
                         channel.writeAndFlush(TunnelMsg);
 

@@ -20,11 +20,20 @@ public class TunnelMsgEncoder extends MessageToByteEncoder<TunnelMsg> {
         }
 
         out.writeInt(bodyLength);
-
-        out.writeByte(msg.getType());
-
-        if (msg.getData() != null) {
-            out.writeBytes(msg.getData());
+        byte msgType = msg.getType();
+        out.writeByte(msgType);
+        switch (msgType){
+            case TunnelMsg.TYPE_AUTH:
+                out.writeByte(msg.getData()[0]);
+                break;
+            case TunnelMsg.TYPE_TRANSFER:
+                if (msg.getData() != null) {
+                    out.writeBytes(msg.getData());
+                }
+                break;
+            default:
+                break;
         }
+
     }
 }
