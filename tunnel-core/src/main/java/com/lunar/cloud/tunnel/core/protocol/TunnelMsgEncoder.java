@@ -9,31 +9,16 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @NoArgsConstructor
-public class TunnelMsgEncoder extends MessageToByteEncoder<TunnelMsg> {
+public class TunnelMsgEncoder extends MessageToByteEncoder<MessageBody> {
 
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, TunnelMsg msg, ByteBuf out) {
-        int bodyLength = 5;
-        if (msg.getData() != null) {
-            bodyLength += msg.getData().length;
-        }
-
-        out.writeInt(bodyLength);
-        byte msgType = msg.getType();
-        out.writeByte(msgType);
-        switch (msgType){
-            case TunnelMsg.TYPE_AUTH:
-                out.writeByte(msg.getData()[0]);
-                break;
-            case TunnelMsg.TYPE_TRANSFER:
-                if (msg.getData() != null) {
-                    out.writeBytes(msg.getData());
-                }
-                break;
-            default:
-                break;
-        }
-
+    protected void encode(ChannelHandlerContext ctx, MessageBody msg, ByteBuf out) {
+        MessageHeader messageHeader = msg.getMessageHeader();
+        int length = messageHeader.getLength();
+        out.writeInt(length);
+        out.writeBytes(messageHeader.encode());
+        out.writeInt(length);
+        out.writeBytes(msg.encode());
     }
 }

@@ -2,10 +2,7 @@ package com.lunar.cloud.tunnel.client.handder;
 
 import com.lunar.cloud.tunnel.client.constant.Constant;
 import com.lunar.cloud.tunnel.client.constant.TunnelClientConfig;
-import com.lunar.cloud.tunnel.core.protocol.MessageType;
-import com.lunar.cloud.tunnel.core.protocol.TunnelMsg;
-import com.lunar.cloud.tunnel.core.protocol.TunnelMsgDecoder;
-import com.lunar.cloud.tunnel.core.protocol.TunnelMsgEncoder;
+import com.lunar.cloud.tunnel.core.protocol.*;
 import com.lunar.cloud.tunnel.core.protocol.handdler.ClientAuthHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -119,7 +116,9 @@ public class ClientStart {
 //                activeChannel.writeAndFlush("register:8001:127.0.0.1:8777");
                 // 告诉服务端这条连接是client的连接
                 TunnelMsg TunnelMsg = new TunnelMsg();
-                TunnelMsg.setType(MessageType.TYPE_CONNECT);
+                MessageHeader header = new MessageHeader();
+                header.setType(MessageType.TYPE_CONNECT);
+                TunnelMsg.setHeader(header);
                 TunnelMsg.setData("client".getBytes());
                 channel.writeAndFlush(TunnelMsg);
 

@@ -62,7 +62,8 @@ public class TunnelMsgDecoder extends LengthFieldBasedFrameDecoder {
         byte[] headerBytes = new byte[MessageHeader.HEADER_LENGTH];
         in.readBytes(headerBytes);
         MessageHeader messageHeader = new MessageHeader().decode(headerBytes);
-
+        // 恢复readerIndex
+        in.resetReaderIndex();
         MessageType messageType = messageHeader.getType();
         if(messageType==MessageType.AUTH_REQUEST){
             int dataLength = messageHeader.getLength();

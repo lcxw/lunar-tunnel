@@ -14,8 +14,8 @@ public class MessageHeader {
     public static final byte VERSION = 1;
     public static final int HEADER_LENGTH = 12;
     private MessageType type;
-    private short sequenceId;
-    private int length;
+    private short sequenceId = 1;
+    private int length = 0;
 
     /**
      * 编码消息头
@@ -24,6 +24,8 @@ public class MessageHeader {
      */
     public byte[] encode() {
         ByteBuffer buffer = ByteBuffer.allocate(4 + 1 + 1 + 2 + 4);
+        buffer.putInt(MAGIC_NUMBER);
+        buffer.put(VERSION);
         buffer.put((byte) type.getValue());
         buffer.putShort(sequenceId);
         buffer.putInt(length);
@@ -49,6 +51,6 @@ public class MessageHeader {
         short sequenceNo = buffer.getShort();
 
         int len = buffer.getInt();
-        return new MessageHeader(t,sequenceNo, len);
+        return new MessageHeader(t, sequenceNo, len);
     }
 }

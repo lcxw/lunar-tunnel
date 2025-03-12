@@ -3,7 +3,7 @@ package com.lunar.cloud.tunnel.core.protocol;
 public abstract class MessageBody {
     public abstract MessageHeader getMessageHeader();
 
-    public abstract byte[] getBody();
+    protected abstract byte[] getBody();
 
     public abstract byte[] encode();
 
