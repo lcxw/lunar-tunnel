@@ -4,6 +4,7 @@ package com.lunar.cloud.tunnel.server.inbound.proxy;
 
 import com.lunar.cloud.tunnel.core.constant.Constant;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsg;
+import com.lunar.cloud.tunnel.server.config.ServerConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -14,6 +15,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.StringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.hutool.extra.spring.SpringUtil;
 
 import static com.lunar.cloud.tunnel.core.protocol.TunnelMsg.*;
 
@@ -33,7 +35,19 @@ public class ClientHandler extends SimpleChannelInboundHandler<TunnelMsg> {
                 break;
             case TYPE_CONNECT:
                 String vid = new String(TunnelMsg.getData());
-                if (StringUtil.isNullOrEmpty(vid) || "client".equals(vid)) {
+                if (StringUtil.isNullOrEmpty(vid) ||vid.startsWith("client")) {
+                    if(vid.startsWith("client:")){
+                        Integer portalPort = Integer.valueOf(vid.split(":")[1]);
+                        ServerConfig serverConfig = SpringUtil.getBean(ServerConfig.class);
+                        if(serverConfig.getReverseProxyList().stream().noneMatch(portMapping->portMapping.getExternalPort()==(portalPort))){
+                           log.error("没有这个客户端的配置信息，禁止注册");
+                           ctx.channel().close();
+                        }else{
+                            String token = vid.split(":")[2];
+                            //todo 验证token，优化客户端注册消息逻辑
+                            Constant.clientChannelMap.put(portalPort,ctx.channel());
+                        }
+                    }
                     Constant.clientChannel = ctx.channel();
                 } else {
                     // 绑定访客和客户端的连接

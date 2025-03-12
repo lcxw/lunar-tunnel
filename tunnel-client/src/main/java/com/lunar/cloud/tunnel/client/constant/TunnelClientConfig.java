@@ -22,6 +22,16 @@ public class TunnelClientConfig {
     private Integer serverPort = 16001;
 
     /**
+     * 访客服务端口
+     */
+//    private Integer portalPort = 16002;
+    private Integer portalPort = 29922;
+
+    /**
+     * 客户端注册token
+     */
+    private String token;
+    /**
      * 服务IP
      */
     private String serverIp = "127.0.0.1";
@@ -29,5 +39,5 @@ public class TunnelClientConfig {
     /**
      * 服务IP
      */
-    private String realServerIp = "127.0.0.2";
+    private String realServerIp = "127.0.0.3";
 }

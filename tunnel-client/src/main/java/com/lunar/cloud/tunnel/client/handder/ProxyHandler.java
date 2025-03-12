@@ -36,7 +36,7 @@ public class ProxyHandler extends SimpleChannelInboundHandler<TunnelMsg> {
                 log.info("收到服务端心跳包，忽略");
                 break;
             case TYPE_CONNECT:
-                log.info("收到服务端连接请求，vid:{},开始连接到目标真实服务", vid);
+                log.info("收到服务端连接请求，vid:{},开始连接到目标真实服务:{}", vid, tunnelClientConfig);
                 RealSocket.connectRealServer(vid, tunnelClientConfig);
                 break;
             case TYPE_DISCONNECT:

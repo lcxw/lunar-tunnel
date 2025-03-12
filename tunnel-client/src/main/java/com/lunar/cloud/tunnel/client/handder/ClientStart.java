@@ -17,6 +17,7 @@ import io.netty.util.concurrent.ScheduledFuture;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.helpers.MessageFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -116,7 +117,7 @@ public class ClientStart {
                 // 告诉服务端这条连接是client的连接
                 TunnelMsg TunnelMsg = new TunnelMsg();
                 TunnelMsg.setType(TunnelMsg.TYPE_CONNECT);
-                TunnelMsg.setData("client".getBytes());
+                TunnelMsg.setData(MessageFormatter.arrayFormat("client:{}:{}", new Object[]{ tunnelClientConfig.getPortalPort(),tunnelClientConfig.getToken()}).getMessage().getBytes());
                 channel.writeAndFlush(TunnelMsg);
 
                 Constant.proxyChannel = channel;

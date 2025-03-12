@@ -37,3 +37,11 @@ logging:
       netty:
         handler:
           logging: debug
+tunnel:
+  client:
+    server-port: 16001
+    portal-port: 29922
+    real-port: 28082
+    server-ip: 127.0.0.1
+    real-server-ip: 127.0.0.3
+    token: 123456

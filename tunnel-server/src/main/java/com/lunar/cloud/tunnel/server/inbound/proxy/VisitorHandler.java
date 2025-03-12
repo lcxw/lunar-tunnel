@@ -38,11 +38,19 @@ public class VisitorHandler extends SimpleChannelInboundHandler<ByteBuf> {
         tunnelMsg.setType(TunnelMsg.TYPE_CONNECT);
         tunnelMsg.setData(vid.getBytes());
         log.info("像客户端发送连接握手信息");
-        if(Constant.clientChannel == null || !Constant.clientChannel.isActive()) {
+        if (Constant.clientChannel == null ||
+                !Constant.clientChannel.isActive()
+                || Constant.clientChannelMap.isEmpty()
+                || Constant.clientChannelMap.get(Integer.valueOf(ctx.channel().localAddress().toString().split(":")[1])) == null) {
             log.info("客户端未连接");
             return;
-        }else{
-            Constant.clientChannel.writeAndFlush(tunnelMsg);
+        } else {
+            Channel clientChannel = Constant.clientChannelMap.get(Integer.valueOf(ctx.channel().localAddress().toString().split(":")[1]));
+            if (clientChannel != null && clientChannel.isActive()) {
+                clientChannel.writeAndFlush(tunnelMsg);
+            } else {
+                Constant.clientChannel.writeAndFlush(tunnelMsg);
+            }
         }
         super.channelActive(ctx);
     }

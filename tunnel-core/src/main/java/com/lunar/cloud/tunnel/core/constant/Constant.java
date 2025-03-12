@@ -13,6 +13,8 @@ public class Constant {
     /** 客户端服务channel */
     public static Channel clientChannel = null;
 
+    public static Map<Integer,Channel> clientChannelMap = new ConcurrentHashMap<>();
+
     /** 绑定channel_id */
     public static final AttributeKey<String> VID = AttributeKey.newInstance("vid");
 

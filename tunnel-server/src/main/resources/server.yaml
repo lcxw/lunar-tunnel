@@ -20,3 +20,6 @@ server:
       - internal-host: 127.0.0.3
         internal-port: 28082
         external-port: 29922
+      - internal-host: 127.0.0.2
+        internal-port: 28082
+        external-port: 16002
