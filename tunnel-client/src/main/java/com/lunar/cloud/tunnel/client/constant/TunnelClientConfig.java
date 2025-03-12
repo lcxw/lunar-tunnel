@@ -17,12 +17,12 @@ public class TunnelClientConfig {
     private Integer realPort = 28088;
 
     /**
-     * 服务端口
+     * 服务端口，用于链接服务端完成注册
      */
     private Integer serverPort = 16001;
 
     /**
-     * 访客服务端口
+     * 访客服务端口，后期考虑修改为FRPC类似的，客户端期望服务端使用的端口，当服务器无法使用该端口时，会使用其他端口或者报错拒绝链接
      */
 //    private Integer portalPort = 16002;
     private Integer portalPort = 29922;
@@ -32,12 +32,12 @@ public class TunnelClientConfig {
      */
     private String token;
     /**
-     * 服务IP
+     * 代理服务IP
      */
     private String serverIp = "127.0.0.1";
 
     /**
-     * 服务IP
+     * 真实目标服务IP
      */
     private String realServerIp = "127.0.0.3";
 }
