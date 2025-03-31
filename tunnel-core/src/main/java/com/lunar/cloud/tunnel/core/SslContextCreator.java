@@ -1,5 +1,6 @@
 package com.lunar.cloud.tunnel.core;
 
+import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +14,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-
+@UtilityClass
 public class SslContextCreator {
 
     private static Logger logger = LoggerFactory.getLogger(SslContextCreator.class);

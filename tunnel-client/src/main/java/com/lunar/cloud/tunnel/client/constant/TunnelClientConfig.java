@@ -2,7 +2,6 @@ package com.lunar.cloud.tunnel.client.constant;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -40,4 +39,11 @@ public class TunnelClientConfig {
      * 真实目标服务IP
      */
     private String realServerIp = "127.0.0.3";
+
+
+    private Boolean enableTls = false;
+
+    private String sslPrivateKeyPassword;
+
+    private String sslPrivateKeyUrl;
 }

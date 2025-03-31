@@ -2,6 +2,7 @@ package com.lunar.cloud.tunnel.client.handder;
 
 import com.lunar.cloud.tunnel.client.constant.Constant;
 import com.lunar.cloud.tunnel.client.constant.TunnelClientConfig;
+import com.lunar.cloud.tunnel.core.SslContextCreator;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsg;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsgDecoder;
 import com.lunar.cloud.tunnel.core.protocol.TunnelMsgEncoder;
@@ -10,6 +11,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
@@ -23,9 +25,12 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
@@ -43,6 +48,7 @@ public class ClientStart {
     private Channel activeChannel; // 新增连接状态跟踪
     ScheduledFuture<?> scheduledFuture;
     private LocalDateTime lalastConnectionTime;
+    private SSLContext sslContext;
 
     @EventListener(ApplicationReadyEvent.class)
     @Async
@@ -65,7 +71,14 @@ public class ClientStart {
                     @Override
                     public void initChannel(SocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
-
+                        if (Boolean.TRUE.equals(tunnelClientConfig.getEnableTls())) {
+                            if (sslContext == null) {
+                                sslContext = SslContextCreator.createSSLContext(new ClassPathResource(tunnelClientConfig.getSslPrivateKeyUrl()).getInputStream(),tunnelClientConfig.getSslPrivateKeyPassword(),tunnelClientConfig.getSslPrivateKeyPassword());
+                            }
+                            SSLEngine sslEngine = sslContext.createSSLEngine();
+                            sslEngine.setUseClientMode(true);
+                            ch.pipeline().addLast(new SslHandler(sslEngine));
+                        }
                         pipeline.addLast(new TunnelMsgDecoder(Integer.MAX_VALUE, 0, 4, -4, 0));
                         pipeline.addLast(new TunnelMsgEncoder());
                         pipeline.addLast(new IdleStateHandler(40, 600, 0));
