@@ -43,7 +43,7 @@
         <eclipse-collections.versionn>11.1.0</eclipse-collections.versionn>
         <redisson.version>3.35.0</redisson.version>
         <activiti.version>7.6.0</activiti.version>
-        <minio.version>8.5.12</minio.version>
+        <minio.version>8.6.0</minio.version>
     </properties>
     <profiles>
         <profile>
