@@ -32,7 +32,7 @@
         <spring-boot-admin.version>3.3.3</spring-boot-admin.version>
         <knife4j.version>4.5.0</knife4j.version>
         <skipTests>true</skipTests>
-        <swagger.version>2.2.23</swagger.version>
+        <swagger.version>2.2.45</swagger.version>
         <maven.test.skip>true</maven.test.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
